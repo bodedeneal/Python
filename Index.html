@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Python Script Reader</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2em; background: #f9f9f9; }
+    h1 { color: #306998; }
+    #output { 
+      white-space: pre; 
+      font-family: 'Fira Mono', 'Consolas', monospace; 
+      background: #272822; 
+      color: #f8f8f2; 
+      padding: 1em; 
+      border-radius: 8px; 
+      overflow-x: auto; 
+      margin-top: 1em;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+      min-height: 300px;
+    }
+    input[type="file"] {
+      margin-top: 1em;
+      margin-bottom: 1em;
+    }
+    /* Basic syntax highlighting */
+    .keyword { color: #66d9ef; }
+    .string { color: #e6db74; }
+    .comment { color: #75715e; }
+    .number { color: #ae81ff; }
+    .funcname { color: #a6e22e; }
+  </style>
+</head>
+<body>
+  <h1>Python Script Reader</h1>
+  <input type="file" id="fileInput" accept=".py">
+  <div id="output">Upload a Python file to view its contents here.</div>
+  <script>
+    const keywords = ["def","return","if","else","elif","for","while","break","continue","import","from","as","class","try","except","finally","with","pass","raise","in","is","not","and","or","lambda","yield","global","nonlocal","assert","del"];
+    function highlightPython(code) {
+      // Escape HTML
+      code = code.replace(/</g,"&lt;").replace(/>/g,"&gt;");
+      // Comments
+      code = code.replace(/(#.*)$/gm, '<span class="comment">$1</span>');
+      // Strings
+      code = code.replace(/('[^']*'|"[^"]*")/g, '<span class="string">$1</span>');
+      // Keywords
+      for (const kw of keywords) {
+        const regex = new RegExp("\\b" + kw + "\\b", "g");
+        code = code.replace(regex, `<span class="keyword">${kw}</span>`);
+      }
+      // Function names
+      code = code.replace(/def (\w+)/g, (m, fn) => `def <span class="funcname">${fn}</span>`);
+      // Numbers
+      code = code.replace(/\b([0-9]+(\.[0-9]*)?)\b/g, '<span class="number">$1</span>');
+      return code;
+    }
+
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const code = event.target.result;
+        document.getElementById('output').innerHTML = highlightPython(code);
+      };
+      reader.readAsText(file);
+    });
+  </script>
+</body>
+</html>
