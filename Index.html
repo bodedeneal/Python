@@ -2,69 +2,363 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Python Script Reader</title>
+  <title>Advanced Python Script Reader</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 2em; background: #f9f9f9; }
-    h1 { color: #306998; }
-    #output { 
-      white-space: pre; 
-      font-family: 'Fira Mono', 'Consolas', monospace; 
-      background: #272822; 
-      color: #f8f8f2; 
-      padding: 1em; 
-      border-radius: 8px; 
-      overflow-x: auto; 
-      margin-top: 1em;
+    :root {
+      --bg: #f9f9f9;
+      --fg: #222;
+      --accent: #306998;
+      --code-bg: #272822;
+      --code-fg: #f8f8f2;
+      --comment: #75715e;
+      --string: #e6db74;
+      --keyword: #66d9ef;
+      --number: #ae81ff;
+      --funcname: #a6e22e;
+      --tab-bg: #e0e0e0;
+      --tab-active: #306998;
+      --tab-fg: #333;
+    }
+    body.light {
+      --bg: #f9f9f9;
+      --fg: #222;
+      --code-bg: #272822;
+      --code-fg: #f8f8f2;
+      --tab-bg: #e0e0e0;
+      --tab-active: #306998;
+      --tab-fg: #333;
+    }
+    body.dark {
+      --bg: #222;
+      --fg: #eee;
+      --code-bg: #181818;
+      --code-fg: #eee;
+      --tab-bg: #181818;
+      --tab-active: #66d9ef;
+      --tab-fg: #eee;
+    }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    h1 {
+      color: var(--accent);
+      margin: 1em 1em 0.5em 1em;
+      font-size: 2em;
+    }
+    .toolbar {
+      display: flex;
+      gap: 1em;
+      align-items: center;
+      margin: 1em;
+      flex-wrap: wrap;
+    }
+    .tabs {
+      display: flex;
+      background: var(--tab-bg);
+      padding: 0.5em 1em;
+      gap: 0.5em;
+    }
+    .tab {
+      padding: 0.5em 1em;
+      background: var(--tab-bg);
+      color: var(--tab-fg);
+      border-radius: 6px 6px 0 0;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      outline: none;
+    }
+    .tab.active {
+      background: var(--tab-active);
+      color: #fff;
+    }
+    .editor-container {
+      display: flex;
+      flex-direction: row;
+      background: var(--code-bg);
+      color: var(--code-fg);
+      font-family: 'Fira Mono', 'Consolas', monospace;
+      border-radius: 8px;
+      margin: 0 1em 1em 1em;
       box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+      overflow: hidden;
       min-height: 300px;
     }
-    input[type="file"] {
-      margin-top: 1em;
-      margin-bottom: 1em;
+    .line-numbers {
+      background: #222;
+      color: #888;
+      padding: 1em 0.5em;
+      text-align: right;
+      user-select: none;
+      min-width: 3em;
+      font-size: 1em;
+      border-right: 1px solid #444;
     }
-    /* Basic syntax highlighting */
-    .keyword { color: #66d9ef; }
-    .string { color: #e6db74; }
-    .comment { color: #75715e; }
-    .number { color: #ae81ff; }
-    .funcname { color: #a6e22e; }
+    #editor {
+      flex: 1;
+      outline: none;
+      padding: 1em;
+      font-size: 1em;
+      background: transparent;
+      color: inherit;
+      white-space: pre;
+      overflow: auto;
+      min-height: 300px;
+      max-height: 600px;
+    }
+    .fold-toggle {
+      cursor: pointer;
+      color: var(--keyword);
+      margin-right: 0.5em;
+      user-select: none;
+      font-weight: bold;
+    }
+    .searchbar {
+      padding: 0.5em;
+      background: #eee;
+      border-radius: 6px;
+      margin: 0.5em 1em;
+      display: flex;
+      gap: 0.5em;
+      align-items: center;
+    }
+    .searchbar input {
+      font-size: 1em;
+      padding: 0.3em 0.5em;
+    }
+    .theme-switch {
+      cursor: pointer;
+      padding: 0.5em 1em;
+      border-radius: 6px;
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      font-weight: bold;
+      outline: none;
+    }
+    .keyword { color: var(--keyword); }
+    .string { color: var(--string); }
+    .comment { color: var(--comment); }
+    .number { color: var(--number); }
+    .funcname { color: var(--funcname); }
+    .search-highlight { background: yellow; color: black; }
+    .hidden { display: none; }
+    .button { padding: 0.5em 1em; border-radius: 6px; border: none; background: var(--accent); color: #fff; font-weight: bold; cursor: pointer; }
+    .button:disabled { opacity: 0.5; cursor: not-allowed; }
   </style>
 </head>
-<body>
-  <h1>Python Script Reader</h1>
-  <input type="file" id="fileInput" accept=".py">
-  <div id="output">Upload a Python file to view its contents here.</div>
+<body class="light">
+  <h1>Python Script Reader & Editor</h1>
+  <div class="toolbar">
+    <input type="file" id="fileInput" accept=".py" multiple>
+    <button class="button" id="downloadBtn" disabled>Download</button>
+    <button class="button" id="newTabBtn">New File</button>
+    <button class="theme-switch" id="themeBtn">🌙 Dark Mode</button>
+  </div>
+  <div class="tabs" id="tabs"></div>
+  <div class="searchbar">
+    <input type="text" id="searchInput" placeholder="Search code...">
+    <button class="button" id="searchBtn">Find</button>
+    <span id="searchCount"></span>
+  </div>
+  <div class="editor-container">
+    <div class="line-numbers" id="lineNumbers"></div>
+    <div id="editor" contenteditable="true" spellcheck="false"></div>
+  </div>
   <script>
+    // --- Data Model ---
+    let files = []; // {name, content, folded: [], searchMatches: []}
+    let activeTab = 0;
+    let theme = "light";
+
+    // --- Utility ---
+    function escapeHTML(s) {
+      return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    }
     const keywords = ["def","return","if","else","elif","for","while","break","continue","import","from","as","class","try","except","finally","with","pass","raise","in","is","not","and","or","lambda","yield","global","nonlocal","assert","del"];
-    function highlightPython(code) {
-      // Escape HTML
-      code = code.replace(/</g,"&lt;").replace(/>/g,"&gt;");
-      // Comments
-      code = code.replace(/(#.*)$/gm, '<span class="comment">$1</span>');
-      // Strings
-      code = code.replace(/('[^']*'|"[^"]*")/g, '<span class="string">$1</span>');
-      // Keywords
-      for (const kw of keywords) {
-        const regex = new RegExp("\\b" + kw + "\\b", "g");
-        code = code.replace(regex, `<span class="keyword">${kw}</span>`);
+    function highlightPython(code, folded=[], searchMatches=[]) {
+      let lines = code.split("\n");
+      let out = "";
+      let foldStack = [];
+      let insideFold = false;
+      for (let i=0; i<lines.length; i++) {
+        let line = escapeHTML(lines[i]);
+        let origLine = lines[i];
+        // Comments
+        line = line.replace(/(#.*)$/g, '<span class="comment">$1</span>');
+        // Strings
+        line = line.replace(/('[^']*'|"[^"]*")/g, '<span class="string">$1</span>');
+        // Keywords
+        for (const kw of keywords) {
+          const regex = new RegExp("\\b" + kw + "\\b", "g");
+          line = line.replace(regex, `<span class="keyword">${kw}</span>`);
+        }
+        // Function/Class names & folding logic
+        let foldId = null;
+        let foldToggle = "";
+        if (/^\s*def\s+(\w+)/.test(origLine)) {
+          let fn = origLine.match(/^\s*def\s+(\w+)/)[1];
+          foldId = "fold-fn-" + i;
+          foldToggle = `<span class="fold-toggle" onclick="toggleFold(${i})" title="Fold/Unfold">&#x25BE;</span>`;
+          line = line.replace(/def (\w+)/, `def <span class="funcname">${fn}</span>`);
+          foldStack.push({indent: origLine.match(/^(\s*)/)[1].length, start: i, type: "fn"});
+        }
+        if (/^\s*class\s+(\w+)/.test(origLine)) {
+          let cls = origLine.match(/^\s*class\s+(\w+)/)[1];
+          foldId = "fold-cls-" + i;
+          foldToggle = `<span class="fold-toggle" onclick="toggleFold(${i})" title="Fold/Unfold">&#x25BE;</span>`;
+          line = line.replace(/class (\w+)/, `class <span class="funcname">${cls}</span>`);
+          foldStack.push({indent: origLine.match(/^(\s*)/)[1].length, start: i, type: "cls"});
+        }
+        // Numbers
+        line = line.replace(/\b([0-9]+(\.[0-9]*)?)\b/g, '<span class="number">$1</span>');
+        // Search highlight
+        if (searchMatches.includes(i)) {
+          line = `<span class="search-highlight">${line}</span>`;
+        }
+        // Folding UI
+        if (folded.includes(i)) {
+          out += `<div id="fold-${i}" class="folded"><span class="fold-toggle" onclick="toggleFold(${i})">&#x25B6;</span> ... folded ...</div>`;
+          insideFold = true;
+        } else {
+          out += `<div id="line-${i}" style="padding-left:${(origLine.match(/^(\s*)/)[1].length)*8}px;">${foldToggle}${line}</div>`;
+        }
+        // End folding block
+        if (insideFold && !folded.includes(i)) insideFold = false;
       }
-      // Function names
-      code = code.replace(/def (\w+)/g, (m, fn) => `def <span class="funcname">${fn}</span>`);
-      // Numbers
-      code = code.replace(/\b([0-9]+(\.[0-9]*)?)\b/g, '<span class="number">$1</span>');
-      return code;
+      return out;
     }
 
-    document.getElementById('fileInput').addEventListener('change', function(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(event) {
-        const code = event.target.result;
-        document.getElementById('output').innerHTML = highlightPython(code);
-      };
-      reader.readAsText(file);
+    // --- Folding ---
+    function getFoldBlockStartIdx(idx) {
+      let lines = files[activeTab].content.split("\n");
+      let indent = lines[idx].match(/^(\s*)/)[1].length;
+      let start = idx+1;
+      let end = lines.length-1;
+      for (let i=start;i<lines.length;i++) {
+        let currIndent = lines[i].match(/^(\s*)/)[1].length;
+        if (currIndent <= indent && lines[i].trim() !== "") {
+          end = i-1;
+          break;
+        }
+      }
+      return {start: idx+1, end};
+    }
+    window.toggleFold = function(idx) {
+      let folded = files[activeTab].folded || [];
+      if (folded.includes(idx)) {
+        folded = folded.filter(i=>i!==idx);
+      } else {
+        let block = getFoldBlockStartIdx(idx);
+        folded.push(idx);
+        // Hide block lines
+        for (let i=block.start;i<=block.end;i++) folded.push(i);
+      }
+      files[activeTab].folded = [...new Set(folded)];
+      renderEditor();
+    }
+
+    // --- Tabs ---
+    function renderTabs() {
+      let tabsDiv = document.getElementById('tabs');
+      tabsDiv.innerHTML = "";
+      files.forEach((file, idx) => {
+        let tab = document.createElement('button');
+        tab.className = "tab" + (activeTab===idx?" active":"");
+        tab.textContent = file.name || "Untitled";
+        tab.onclick = ()=>{activeTab=idx;renderEditor();renderTabs();};
+        let closeBtn = document.createElement('span');
+        closeBtn.textContent = " ×";
+        closeBtn.style.cursor = "pointer";
+        closeBtn.onclick = (e)=>{e.stopPropagation();files.splice(idx,1);if(activeTab>=files.length)activeTab=files.length-1;renderTabs();renderEditor();};
+        tab.appendChild(closeBtn);
+        tabsDiv.appendChild(tab);
+      });
+    }
+
+    // --- Editor & Line Numbers ---
+    function updateLineNumbers() {
+      let ln = document.getElementById('lineNumbers');
+      let lines = files[activeTab].content.split("\n").length;
+      ln.innerHTML = Array.from({length:lines},(_,i)=>i+1).join('<br>');
+    }
+    function renderEditor() {
+      if (!files[activeTab]) return;
+      let ed = document.getElementById('editor');
+      ed.innerHTML = highlightPython(files[activeTab].content, files[activeTab].folded||[], files[activeTab].searchMatches||[]);
+      updateLineNumbers();
+      document.getElementById('downloadBtn').disabled = false;
+      document.getElementById('searchCount').textContent = files[activeTab].searchMatches && files[activeTab].searchMatches.length?"Matches: "+files[activeTab].searchMatches.length:"";
+    }
+
+    // --- Editable code ---
+    document.getElementById('editor').addEventListener('input', function() {
+      let text = this.innerText.replace(/\u00A0/g," "); // Remove any nbsp
+      files[activeTab].content = text;
+      renderEditor();
     });
+
+    // --- File Upload ---
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+      Array.from(e.target.files).forEach(f=>{
+        let reader = new FileReader();
+        reader.onload = function(ev) {
+          files.push({name: f.name, content: ev.target.result, folded: [], searchMatches: []});
+          activeTab = files.length-1;
+          renderTabs();
+          renderEditor();
+        };
+        reader.readAsText(f);
+      });
+    });
+
+    // --- Download ---
+    document.getElementById('downloadBtn').onclick = function() {
+      if (!files[activeTab]) return;
+      let blob = new Blob([files[activeTab].content], {type:"text/plain"});
+      let a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = files[activeTab].name || "script.py";
+      a.click();
+    };
+
+    // --- New Tab ---
+    document.getElementById('newTabBtn').onclick = function() {
+      files.push({name: "Untitled.py", content: "", folded: [], searchMatches: []});
+      activeTab = files.length-1;
+      renderTabs();
+      renderEditor();
+    };
+
+    // --- Search ---
+    document.getElementById('searchBtn').onclick = function() {
+      let term = document.getElementById('searchInput').value;
+      let lines = files[activeTab].content.split("\n");
+      let matches = [];
+      if (term) {
+        lines.forEach((l,i)=>{if(l.includes(term))matches.push(i);});
+      }
+      files[activeTab].searchMatches = matches;
+      renderEditor();
+    };
+
+    // --- Theme ---
+    document.getElementById('themeBtn').onclick = function() {
+      theme = theme === "light" ? "dark" : "light";
+      document.body.className = theme;
+      document.getElementById('themeBtn').textContent = theme==="light"?"🌙 Dark Mode":"☀️ Light Mode";
+    };
+
+    // --- Initial state ---
+    files = [{name: "Untitled.py", content: "", folded: [], searchMatches: []}];
+    renderTabs();
+    renderEditor();
+
+    // --- Multi-file tabs (close with ×), search highlights, folding, editable area, etc.
   </script>
 </body>
 </html>
