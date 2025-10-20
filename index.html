@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Thonny-like Python Code Runner</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Highlight.js for syntax highlighting -->
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <style>
+    body { font-family: sans-serif; background: #222; color: #eee; padding: 2em; }
+    h1 { color: #FFD700; }
+    textarea { width: 100%; height: 200px; font-family: monospace; font-size: 1em; }
+    pre { background: #282c34; padding: 1em; border-radius: 5px; overflow-x: auto; }
+    #output { background: #111; color: #FFD700; padding: 1em; margin-top: 1em; border-radius: 5px; min-height: 2em;}
+    button { margin-top: 1em; padding: 0.5em 2em; font-size: 1em; }
+  </style>
+</head>
+<body>
+  <h1>Python Code Reader & Runner (Thonny-like)</h1>
+  <label for="code">Paste your Python code below:</label>
+  <textarea id="code" spellcheck="false">
+print("Hello World!")
+a = 5
+b = 7
+print("Sum:", a + b)
+  </textarea>
+  <br>
+  <button id="runBtn">Run Code</button>
+  <button id="highlightBtn">Show Syntax Highlight</button>
+  <h2>Output:</h2>
+  <div id="output"></div>
+  <h2>Syntax Highlighted Code:</h2>
+  <pre><code id="highlighted" class="language-python"></code></pre>
+
+  <!-- Pyodide for running Python in-browser -->
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
+  <script>
+    let pyodideReady = false;
+    let pyodide;
+    async function loadPyodideAndPackages() {
+      pyodide = await loadPyodide();
+      pyodideReady = true;
+      document.getElementById('runBtn').innerText = "Run Code";
+    }
+    loadPyodideAndPackages();
+
+    document.getElementById('runBtn').addEventListener('click', async () => {
+      const code = document.getElementById('code').value;
+      const outputDiv = document.getElementById('output');
+      outputDiv.textContent = "Running...";
+      if (!pyodideReady) {
+        outputDiv.textContent = "Pyodide is still loading. Please wait...";
+        return;
+      }
+      try {
+        let output = '';
+        // Redirect Python's stdout
+        pyodide.setStdout({batched: (s) => output += s});
+        pyodide.setStderr({batched: (s) => output += s});
+        await pyodide.runPythonAsync(code);
+        outputDiv.textContent = output || "(No output)";
+      } catch (err) {
+        outputDiv.textContent = "Error:\n" + err;
+      }
+    });
+
+    document.getElementById('highlightBtn').addEventListener('click', () => {
+      const code = document.getElementById('code').value;
+      const highlighted = document.getElementById('highlighted');
+      highlighted.textContent = code;
+      hljs.highlightElement(highlighted);
+    });
+
+    // Initial syntax highlight on page load
+    window.onload = () => {
+      document.getElementById('highlightBtn').click();
+    };
+  </script>
+</body>
+</html>
