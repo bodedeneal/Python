@@ -1,230 +1,64 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>Python Script Reader & Editor</title>
   <style>
-    :root {
-      --bg: #f9f9f9;
-      --fg: #222;
-      --accent: #306998;
-      --code-bg: #272822;
-      --code-fg: #f8f8f2;
-      --comment: #75715e;
-      --string: #e6db74;
-      --keyword: #66d9ef;
-      --number: #ae81ff;
-      --funcname: #a6e22e;
-      --tab-bg: #e0e0e0;
-      --tab-active: #306998;
-      --tab-fg: #333;
-    }
-    body.light {
-      --bg: #f9f9f9;
-      --fg: #222;
-      --code-bg: #272822;
-      --code-fg: #f8f8f2;
-      --tab-bg: #e0e0e0;
-      --tab-active: #306998;
-      --tab-fg: #333;
-    }
-    body.dark {
-      --bg: #222;
-      --fg: #eee;
-      --code-bg: #181818;
-      --code-fg: #eee;
-      --tab-bg: #181818;
-      --tab-active: #66d9ef;
-      --tab-fg: #eee;
-    }
-    body {
-      background: var(--bg);
-      color: var(--fg);
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-    }
-    h1 {
-      color: var(--accent);
-      margin: 1em 1em 0.5em 1em;
-      font-size: 2em;
-    }
-    .toolbar {
-      display: flex;
-      gap: 1em;
-      align-items: center;
-      margin: 1em;
-      flex-wrap: wrap;
-    }
-    .tabs {
-      display: flex;
-      background: var(--tab-bg);
-      padding: 0.5em 1em;
-      gap: 0.5em;
-      flex-wrap: wrap;
-    }
-    .tab {
-      padding: 0.5em 1em;
-      background: var(--tab-bg);
-      color: var(--tab-fg);
-      border-radius: 6px 6px 0 0;
-      border: none;
-      cursor: pointer;
-      font-weight: bold;
-      outline: none;
-      position: relative;
-      margin-right: 0.2em;
-      margin-bottom: -2px;
-    }
-    .tab.active {
-      background: var(--tab-active);
-      color: #fff;
-    }
-    .tab .close {
-      position: absolute;
-      right: 8px;
-      top: 2px;
-      color: #888;
-      font-size: 1em;
-      cursor: pointer;
-      padding-left: 6px;
-      font-weight: normal;
-    }
-    .editor-container {
-      display: flex;
-      flex-direction: row;
-      background: var(--code-bg);
-      color: var(--code-fg);
-      font-family: 'Fira Mono', 'Consolas', monospace;
-      border-radius: 8px;
-      margin: 0 1em 1em 1em;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-      overflow: hidden;
-      min-height: 300px;
-      max-height: 600px;
-    }
-    .line-numbers {
-      background: #222;
-      color: #888;
-      padding: 1em 0.5em;
-      text-align: right;
-      user-select: none;
-      min-width: 3em;
-      font-size: 1em;
-      border-right: 1px solid #444;
-      overflow: hidden;
-    }
-    #editor {
-      flex: 1;
-      outline: none;
-      padding: 1em;
-      font-size: 1em;
-      background: transparent;
-      color: inherit;
-      white-space: pre;
-      overflow: auto;
-      min-height: 300px;
-      max-height: 600px;
-    }
-    .fold-toggle {
-      cursor: pointer;
-      color: var(--keyword);
-      margin-right: 0.5em;
-      user-select: none;
-      font-weight: bold;
-      display: inline-block;
-    }
-    .searchbar {
-      padding: 0.5em;
-      background: #eee;
-      border-radius: 6px;
-      margin: 0.5em 1em;
-      display: flex;
-      gap: 0.5em;
-      align-items: center;
-    }
-    .searchbar input {
-      font-size: 1em;
-      padding: 0.3em 0.5em;
-    }
-    .theme-switch {
-      cursor: pointer;
-      padding: 0.5em 1em;
-      border-radius: 6px;
-      border: none;
-      background: var(--accent);
-      color: #fff;
-      font-weight: bold;
-      outline: none;
-    }
-    .keyword { color: var(--keyword); }
-    .string { color: var(--string); }
-    .comment { color: var(--comment); }
-    .number { color: var(--number); }
-    .funcname { color: var(--funcname); }
+    body { background: #2b2b2b; color: #f8f8f2; font-family: Arial, sans-serif; margin: 0; }
+    .toolbar { margin: 1em; }
+    .button { padding: 0.3em 1em; border: none; border-radius: 5px; background: #306998; color: #fff; font-weight: bold; cursor: pointer; }
+    .button:disabled { opacity: 0.6; cursor: not-allowed; }
+    .editor-wrap { margin: 1em; background: #272822; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+    #editor, #highlighted { width: 100%; min-height: 300px; font-size: 1em; font-family: 'Fira Mono', monospace; border: none; outline: none; background: transparent; color: inherit; padding: 1em; }
+    #editor { resize: vertical; }
+    #highlighted { white-space: pre; }
+    .keyword { color: #66d9ef; }
+    .string { color: #e6db74; }
+    .comment { color: #75715e; }
+    .number { color: #ae81ff; }
+    .funcname { color: #a6e22e; }
+    .tab { padding: 0.5em 1em; background: #222; color: #fff; border: none; cursor: pointer; border-radius: 5px 5px 0 0; margin-right: 3px; }
+    .tab.active { background: #306998; }
+    .tab .close { margin-left: 6px; color: #aaa; cursor: pointer; }
+    .searchbar { margin: 1em; }
     .search-highlight { background: yellow; color: black; }
-    .folded { color: #888; background: #333; font-style: italic; cursor: pointer; }
-    .hidden { display: none; }
-    .button { padding: 0.5em 1em; border-radius: 6px; border: none; background: var(--accent); color: #fff; font-weight: bold; cursor: pointer; }
-    .button:disabled { opacity: 0.5; cursor: not-allowed; }
-    @media (max-width: 600px) {
-      .editor-container { flex-direction: column; }
-      .line-numbers { min-width: 2em; font-size: 0.9em; }
-    }
   </style>
 </head>
-<body class="light">
-  <h1>Python Script Reader & Editor</h1>
+<body>
   <div class="toolbar">
+    <button class="button" id="editBtn">Edit</button>
+    <button class="button" id="viewBtn">View</button>
     <input type="file" id="fileInput" accept=".py" multiple>
-    <button class="button" id="downloadBtn" disabled>Download</button>
+    <button class="button" id="downloadBtn">Download</button>
     <button class="button" id="newTabBtn">New File</button>
-    <button class="theme-switch" id="themeBtn">🌙 Dark Mode</button>
+    <span id="tabs"></span>
   </div>
-  <div class="tabs" id="tabs"></div>
   <div class="searchbar">
     <input type="text" id="searchInput" placeholder="Search code...">
     <button class="button" id="searchBtn">Find</button>
     <span id="searchCount"></span>
   </div>
-  <div class="editor-container">
-    <div class="line-numbers" id="lineNumbers"></div>
-    <div id="editor" contenteditable="true" spellcheck="false"></div>
+  <div class="editor-wrap">
+    <textarea id="editor"></textarea>
+    <pre id="highlighted" style="display:none"></pre>
   </div>
   <script>
     // --- Data Model ---
-    let files = []; // {name, content, folded: [], searchMatches: []}
+    let files = [{name:"Untitled.py", content:'print("Hello, world!")', searchMatches:[]}];
     let activeTab = 0;
-    let theme = "light";
+    let mode = 'edit'; // or 'view'
 
-    // --- Utility ---
     function escapeHTML(s) {
       return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
     }
+
     const keywords = ["def","return","if","else","elif","for","while","break","continue","import","from","as","class","try","except","finally","with","pass","raise","in","is","not","and","or","lambda","yield","global","nonlocal","assert","del"];
-    function highlightPython(code, folded=[], searchMatches=[]) {
+    function highlightPython(code, searchMatches=[]) {
       let lines = code.split("\n");
       let out = "";
-      let foldStack = [];
-      let insideFold = false;
-      let foldedBlock = {};
-      // Build foldable blocks
-      for (let i=0; i<lines.length; i++) {
-        let origLine = lines[i];
-        let indent = origLine.match(/^(\s*)/)[1].length;
-        if (/^\s*def\s+(\w+)/.test(origLine) || /^\s*class\s+(\w+)/.test(origLine)) {
-          // Find end of block
-          let end = i+1;
-          for (; end<lines.length; end++) {
-            let currIndent = lines[end].match(/^(\s*)/)[1].length;
-            if (lines[end].trim() && currIndent <= indent) break;
-          }
-          foldedBlock[i] = end-1;
-        }
-      }
       for (let i=0; i<lines.length; i++) {
         let line = escapeHTML(lines[i]);
-        let origLine = lines[i];
         // Comments
         line = line.replace(/(#.*)$/g, '<span class="comment">$1</span>');
         // Strings
@@ -234,19 +68,14 @@
           const regex = new RegExp("\\b" + kw + "\\b", "g");
           line = line.replace(regex, `<span class="keyword">${kw}</span>`);
         }
-        // Function/Class names & folding UI
-        let foldToggle = "";
-        if (foldedBlock[i] !== undefined) {
-          let icon = folded.includes(i) ? "&#x25B6;" : "&#x25BE;";
-          foldToggle = `<span class="fold-toggle" onclick="toggleFold(${i})" title="Fold/Unfold">${icon}</span>`;
-          if (/^\s*def\s+(\w+)/.test(origLine)) {
-            let fn = origLine.match(/^\s*def\s+(\w+)/)[1];
-            line = line.replace(/def (\w+)/, `def <span class="funcname">${fn}</span>`);
-          }
-          if (/^\s*class\s+(\w+)/.test(origLine)) {
-            let cls = origLine.match(/^\s*class\s+(\w+)/)[1];
-            line = line.replace(/class (\w+)/, `class <span class="funcname">${cls}</span>`);
-          }
+        // Function/Class names
+        if (/^\s*def\s+(\w+)/.test(lines[i])) {
+          let fn = lines[i].match(/^\s*def\s+(\w+)/)[1];
+          line = line.replace(/def (\w+)/, `def <span class="funcname">${fn}</span>`);
+        }
+        if (/^\s*class\s+(\w+)/.test(lines[i])) {
+          let cls = lines[i].match(/^\s*class\s+(\w+)/)[1];
+          line = line.replace(/class (\w+)/, `class <span class="funcname">${cls}</span>`);
         }
         // Numbers
         line = line.replace(/\b([0-9]+(\.[0-9]*)?)\b/g, '<span class="number">$1</span>');
@@ -254,91 +83,62 @@
         if (searchMatches.includes(i)) {
           line = `<span class="search-highlight">${line}</span>`;
         }
-        // Folding
-        if (foldedBlock[i] !== undefined && folded.includes(i)) {
-          out += `<div id="fold-${i}" class="folded" onclick="toggleFold(${i})" style="padding-left:${(origLine.match(/^(\s*)/)[1].length)*8}px;">${foldToggle} ... folded ...</div>`;
-          i = foldedBlock[i];
-          continue;
-        } else {
-          out += `<div id="line-${i}" style="padding-left:${(origLine.match(/^(\s*)/)[1].length)*8}px;">${foldToggle}${line}</div>`;
-        }
+        out += line + "\n";
       }
       return out;
     }
 
-    // --- Folding ---
-    window.toggleFold = function(idx) {
-      let folded = files[activeTab].folded || [];
-      if (folded.includes(idx)) {
-        folded = folded.filter(i=>i!==idx);
-      } else {
-        folded.push(idx);
-      }
-      files[activeTab].folded = [...new Set(folded)];
-      renderEditor();
-    }
-
-    // --- Tabs ---
-    function renderTabs() {
+    function updateTabs() {
       let tabsDiv = document.getElementById('tabs');
       tabsDiv.innerHTML = "";
       files.forEach((file, idx) => {
         let tab = document.createElement('button');
         tab.className = "tab" + (activeTab===idx?" active":"");
-        tab.textContent = file.name || "Untitled";
-        tab.onclick = ()=>{activeTab=idx;renderEditor();renderTabs();};
-        let closeBtn = document.createElement('span');
-        closeBtn.className = "close";
-        closeBtn.textContent = "×";
-        closeBtn.onclick = (e)=>{e.stopPropagation();files.splice(idx,1);if(activeTab>=files.length)activeTab=files.length-1;renderTabs();renderEditor();};
-        tab.appendChild(closeBtn);
+        tab.innerHTML = file.name + ' <span class="close" title="Close Tab">&#10005;</span>';
+        tab.onclick = ()=>{activeTab=idx;updateEditor();updateTabs();};
+        tab.querySelector('.close').onclick = (e)=>{e.stopPropagation();files.splice(idx,1);if(activeTab>=files.length)activeTab=files.length-1;updateTabs();updateEditor();};
         tabsDiv.appendChild(tab);
       });
       if (files.length === 0) {
-        files.push({name: "Untitled.py", content: "", folded: [], searchMatches: []});
+        files.push({name: "Untitled.py", content:'print("Hello, world!")', searchMatches:[]});
         activeTab = 0;
-        renderTabs();
-        renderEditor();
+        updateTabs();
+        updateEditor();
       }
     }
 
-    // --- Editor & Line Numbers ---
-    function updateLineNumbers() {
-      let ln = document.getElementById('lineNumbers');
-      let lines = files[activeTab].content.split("\n").length;
-      ln.innerHTML = Array.from({length:lines},(_,i)=>i+1).join('<br>');
-    }
-    function renderEditor() {
-      if (!files[activeTab]) return;
-      let ed = document.getElementById('editor');
-      ed.innerHTML = highlightPython(files[activeTab].content, files[activeTab].folded||[], files[activeTab].searchMatches||[]);
-      updateLineNumbers();
+    function updateEditor() {
+      let file = files[activeTab];
+      document.getElementById('editor').value = file.content;
       document.getElementById('downloadBtn').disabled = false;
-      document.getElementById('searchCount').textContent = files[activeTab].searchMatches && files[activeTab].searchMatches.length?"Matches: "+files[activeTab].searchMatches.length:"";
+      document.getElementById('searchCount').textContent = file.searchMatches && file.searchMatches.length ? "Matches: "+file.searchMatches.length : "";
+      if (mode === "edit") {
+        document.getElementById('editor').style.display = "";
+        document.getElementById('highlighted').style.display = "none";
+      } else {
+        document.getElementById('highlighted').innerHTML = highlightPython(file.content, file.searchMatches || []);
+        document.getElementById('editor').style.display = "none";
+        document.getElementById('highlighted').style.display = "";
+      }
     }
 
-    // --- Editable code ---
     document.getElementById('editor').addEventListener('input', function() {
-      let text = this.innerText.replace(/\u00A0/g," "); // Remove any nbsp
-      files[activeTab].content = text;
-      renderEditor();
+      files[activeTab].content = this.value;
     });
 
-    // --- File Upload ---
     document.getElementById('fileInput').addEventListener('change', function(e) {
       Array.from(e.target.files).forEach(f=>{
         let reader = new FileReader();
         reader.onload = function(ev) {
-          files.push({name: f.name, content: ev.target.result, folded: [], searchMatches: []});
+          files.push({name: f.name, content: ev.target.result, searchMatches: []});
           activeTab = files.length-1;
-          renderTabs();
-          renderEditor();
+          updateTabs();
+          updateEditor();
         };
         reader.readAsText(f);
       });
     });
 
-    // --- Download ---
     document.getElementById('downloadBtn').onclick = function() {
       if (!files[activeTab]) return;
       let blob = new Blob([files[activeTab].content], {type:"text/plain"});
@@ -348,15 +148,13 @@
       a.click();
     };
 
-    // --- New Tab ---
     document.getElementById('newTabBtn').onclick = function() {
-      files.push({name: "Untitled.py", content: "", folded: [], searchMatches: []});
+      files.push({name: "Untitled.py", content: 'print("Hello, world!")', searchMatches: []});
       activeTab = files.length-1;
-      renderTabs();
-      renderEditor();
+      updateTabs();
+      updateEditor();
     };
 
-    // --- Search ---
     document.getElementById('searchBtn').onclick = function() {
       let term = document.getElementById('searchInput').value;
       let lines = files[activeTab].content.split("\n");
@@ -365,20 +163,21 @@
         lines.forEach((l,i)=>{if(l.includes(term))matches.push(i);});
       }
       files[activeTab].searchMatches = matches;
-      renderEditor();
+      updateEditor();
     };
 
-    // --- Theme ---
-    document.getElementById('themeBtn').onclick = function() {
-      theme = theme === "light" ? "dark" : "light";
-      document.body.className = theme;
-      document.getElementById('themeBtn').textContent = theme==="light"?"🌙 Dark Mode":"☀️ Light Mode";
+    document.getElementById('editBtn').onclick = function() {
+      mode = 'edit';
+      updateEditor();
+    };
+    document.getElementById('viewBtn').onclick = function() {
+      mode = 'view';
+      updateEditor();
     };
 
-    // --- Initial state ---
-    files = [{name: "Untitled.py", content: "", folded: [], searchMatches: []}];
-    renderTabs();
-    renderEditor();
+    // Initial load
+    updateTabs();
+    updateEditor();
   </script>
 </body>
 </html>
